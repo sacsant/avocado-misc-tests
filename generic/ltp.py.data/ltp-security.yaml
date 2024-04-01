@@ -12,5 +12,3 @@ runltp: !mux
         args: '-f ima'
     securebits:
         args: '-f securebits'
-    tpm_tools:
-        args: '-f tpm_tools'
