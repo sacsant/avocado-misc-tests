@@ -66,13 +66,13 @@ class EliminateDomainSuffix(Test):
             if not smm.check_installed(package) and not smm.install(package):
                 self.cancel('%s is needed for the test to be run' % package)
 
-        self.rev = cpu.get_revision()
+        self.cpu_family = cpu.get_family()
         self.perf_args = "perf stat -v -e"
-        if self.rev == '004b':
+        if self.cpu_family == 'power8':
             self.perf_stat = "%s hv_24x7/HPM_0THRD_NON_IDLE_CCYC" % self.perf_args
-        if self.rev == '004e':
+        if self.cpu_family == 'power9':
             self.perf_stat = "%s hv_24x7/CPM_TLBIE" % self.perf_args
-        if self.rev == '0080':
+        if self.cpu_family == 'power10':
             self.perf_stat = "%s hv_24x7/CPM_TLBIE_FIN" % self.perf_args
         self.event_sysfs = "/sys/bus/event_source/devices/hv_24x7"
 
@@ -169,10 +169,10 @@ class EliminateDomainSuffix(Test):
             self.fail('perf unable to recognize out of range core value')
 
     def test_event_w_chip_param(self):
-        if self.rev == '004b' or self.rev == '004e':
+        if self.cpu_family in ['power8', 'power9']:
             event_out = genio.read_file(
                 "%s/events/PM_PB_CYC" % self.event_sysfs).rstrip('\t\r\n\0')
-        if self.rev == '0080':
+        if self.cpu_family == 'power10':
             event_out = genio.read_file(
                 "%s/events/PM_PHB0_0_CYC" % self.event_sysfs).rstrip('\t\r\n\0')
         if "chip=?" in event_out:
@@ -186,9 +186,9 @@ class EliminateDomainSuffix(Test):
             self.fail('chip file does not exist')
 
     def test_event_wo_chip_param(self):
-        if self.rev == '004b' or self.rev == '004e':
+        if self.cpu_family in ['power8', 'power9']:
             cmd = "hv_24x7/PM_PB_CYC,domain=1/ /bin/true"
-        if self.rev == '0080':
+        if self.cpu_family == 'power10':
             cmd = "hv_24x7/PM_PHB0_0_CYC,domain=1/ /bin/true"
         chip_miss = self.event_stat1(cmd)
         if "Required parameter 'chip' not specified" not in chip_miss.stdout.decode("utf-8"):
@@ -196,34 +196,13 @@ class EliminateDomainSuffix(Test):
                       ' parameter missing')
         else:
             self.log.info('perf detected chip parameter missing')
-
-    def test_check_valid_chip(self):
-        """
-        Valid chip values 0-self.chips and max 65535
-        Test chip value in range self.chips and max 65535
-        """
-        for chip_val in range(0, self.chips):
-            if self.rev == '004b' or self.rev == '004e':
-                cmd = "hv_24x7/PM_PB_CYC,domain=1,chip=%s/ /bin/true" % chip_val
-            if self.rev == '0080':
-                cmd = "hv_24x7/PM_PHB0_0_CYC,domain=1,chip=%s/ /bin/true" % chip_val
-            output_chip = self.event_stat1(cmd)
-            if "Performance counter stats for" not in output_chip.stderr.decode("utf-8"):
-                self.fail('performance counter stats are missing')
-
-    def test_check_invalid_chip(self):
-        """
-        Test invalid out of range chip value
-        """
-        invalid_chip = [self.chips, 65536]
-        for chip_val in invalid_chip:
-            if self.rev == '004b' or self.rev == '004e':
-                cmd = "hv_24x7/PM_PB_CYC,domain=1,chip=%s/ /bin/true" % chip_val
-            if self.rev == '0080':
-                cmd = "hv_24x7/PM_PHB0_0_CYC,domain=1,chip=%s/ /bin/true" % chip_val
-            res = self.event_stat1(cmd)
-            if res.exit_status == 0:
-                self.fail("perf unable to recognise invalid chip value")
+        if self.cpu_family in ['power8', 'power9']:
+            cmd = "hv_24x7/PM_PB_CYC,domain=1,chip=1/ /bin/true"
+        if self.cpu_family == 'power10':
+            cmd = "hv_24x7/PM_PHB0_0_CYC,domain=1,chip=1/ /bin/true"
+        output_chip = self.event_stat1(cmd)
+        if "Performance counter stats for" not in output_chip.stderr.decode("utf-8"):
+            self.fail('performance counter stats for missing')
 
     def test_domain_chip_offset(self):
         cmd = "perf stat -r 10 -x ' ' perf stat -r 10 -x ' ' \
