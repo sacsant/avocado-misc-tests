@@ -243,11 +243,13 @@ class kselftest(Test):
                         .format(ksm_test_dir))
 
     def bpf(self):
-        bpf_test_dir = self.sourcedir + "/bpf/"
-        os.chdir(bpf_test_dir)
-        build.make(bpf_test_dir)
-        self.run_cmd("./test_verifier")
-        build.make(bpf_test_dir, extra_args='run_tests')
+        """
+        Execute the kernel bpf selftests
+        """
+        self.sourcedir = os.path.join(self.buldir, self.testdir)
+        os.chdir(self.sourcedir)
+        build.make(self.sourcedir)
+        build.make(self.sourcedir, extra_args='run_tests')
 
     def cpufreq(self):
         """
