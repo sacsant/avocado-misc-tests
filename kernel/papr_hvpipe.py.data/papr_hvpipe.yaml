@@ -1,0 +1,44 @@
+# YAML configuration file for PAPR HVPIPE test
+#
+# This file contains test parameters for the HVPIPE interface validation test.
+# Modify these values based on your test environment and requirements.
+
+# Source ID for testing
+# Format: 0xCCRRQQQQ where:
+#   CC = 0x02 (HMC source type - required)
+#   RR = 0x00 (reserved)
+#   QQQQ = Source index identifier (0x0000 - 0xFFFF)
+# 
+# Default: 0x02000001 (HMC source with index 1)
+# Valid range: 0x02000000 - 0x0200FFFF
+source_id: 0x02000001
+
+# Timeout for operations (in seconds)
+# Used for poll operations and waiting for events
+# Default: 30 seconds
+timeout: 30
+
+# Test payload size (in bytes)
+# Size of test data to send/receive (excluding header)
+# Must be between 1 and 4048 bytes (HVPIPE_MAX_WRITE_BUFFER_SIZE)
+# Default: 100 bytes
+payload_size: 100
+
+# Additional test source IDs for multi-source testing (optional)
+# Uncomment and add more source IDs if testing with multiple HMC sources
+# additional_sources:
+#   - 0x02000002
+#   - 0x02000003
+
+# Test mode (optional)
+# - basic: Run basic validation tests only
+# - full: Run all tests including stress tests
+# Default: full
+test_mode: full
+
+# Enable verbose logging (optional)
+# Set to true for detailed debug output
+# Default: false
+verbose: false
+
+# Made with Bob
